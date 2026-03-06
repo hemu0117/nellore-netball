@@ -3,9 +3,6 @@ import { useState, useEffect } from "react";
 import * as XLSX from "xlsx";
 import { supabase } from "./supabaseClient";
 
-// --- SETTINGS (CHANGE YOUR USERNAME/PASSWORD HERE) ---
-const ADMIN_USER = "Hemanth";
-const ADMIN_PASS = "Hemu200201";
 
 // --- THEME ---
 const theme = {
@@ -43,8 +40,8 @@ function Header() {
   const navigate = useNavigate();
   useEffect(() => { const t = setInterval(() => setTime(new Date()), 1000); return () => clearInterval(t); }, []);
 
-  const handleLogout = () => {
-    localStorage.removeItem("isLoggedIn");
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
     navigate("/login");
   };
 
@@ -57,9 +54,7 @@ function Header() {
       <div style={{ textAlign: "right" }}>
         <div style={{ color: theme.secondary, fontWeight: "600", fontSize: "18px" }}>{time.toLocaleDateString('en-GB')}</div>
         <div style={{ color: theme.primary, fontSize: "28px", fontWeight: "800", marginTop: "2px" }}>{time.toLocaleTimeString()}</div>
-        {localStorage.getItem("isLoggedIn") && (
-          <button onClick={handleLogout} style={{ color: theme.danger, background: "none", border: "none", cursor: "pointer", fontWeight: "bold", textDecoration: "underline", marginTop: "10px" }}>Logout</button>
-        )}
+        <button onClick={handleLogout} style={{ color: theme.danger, background: "none", border: "none", cursor: "pointer", fontWeight: "bold", textDecoration: "underline", marginTop: "10px" }}>Logout</button>
       </div>
     </div>
   );
@@ -75,23 +70,28 @@ function Signature() {
 }
 
 // --- PROTECTION ---
-const ProtectedRoute = ({ children }) => {
-  return localStorage.getItem("isLoggedIn") ? children : <Navigate to="/login" />;
+const ProtectedRoute = ({ children, session }) => {
+  if (session === undefined) return <div style={pageWrapper}><div style={contentContainer}><h2>Loading securely...</h2></div></div>;
+  return session ? children : <Navigate to="/login" />;
 };
 
 // --- PAGES ---
 function Login() {
-  const [user, setUser] = useState("");
+  const [email, setEmail] = useState("");
   const [pass, setPass] = useState("");
   const navigate = useNavigate();
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
-    if (user === ADMIN_USER && pass === ADMIN_PASS) {
-      localStorage.setItem("isLoggedIn", "true");
-      navigate("/");
+    const { error } = await supabase.auth.signInWithPassword({
+      email: email,
+      password: pass,
+    });
+
+    if (error) {
+      alert(error.message);
     } else {
-      alert("Invalid Admin Credentials!");
+      navigate("/");
     }
   };
 
@@ -101,8 +101,8 @@ function Login() {
         <div style={cardStyle}>
           <h2 style={{ color: theme.primary, marginBottom: "20px" }}>Admin Portal Login</h2>
           <form onSubmit={handleLogin}>
-            <label style={labelStyle}>Username</label>
-            <input style={{ ...inputStyle, marginBottom: "15px" }} type="text" onChange={(e) => setUser(e.target.value)} required />
+            <label style={labelStyle}>Email Address</label>
+            <input style={{ ...inputStyle, marginBottom: "15px" }} type="email" onChange={(e) => setEmail(e.target.value)} required />
             <label style={labelStyle}>Password</label>
             <input style={{ ...inputStyle, marginBottom: "25px" }} type="password" onChange={(e) => setPass(e.target.value)} required />
             <button type="submit" style={{ padding: "15px", cursor: "pointer", borderRadius: "10px", border: "none", backgroundColor: theme.primary, color: "white", width: "100%", fontWeight: "bold", fontSize: "16px" }}>Access Portal</button>
@@ -413,13 +413,29 @@ function ViewDatabase() {
 }
 
 export default function App() {
+  const [session, setSession] = useState(undefined);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+    });
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
   return (
     <Router>
       <Routes>
-        <Route path="/login" element={<Login />} />
-        <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-        <Route path="/add-player" element={<ProtectedRoute><AddPlayer /></ProtectedRoute>} />
-        <Route path="/view-database" element={<ProtectedRoute><ViewDatabase /></ProtectedRoute>} />
+        <Route path="/login" element={session ? <Navigate to="/" /> : <Login />} />
+        <Route path="/" element={<ProtectedRoute session={session}><Dashboard /></ProtectedRoute>} />
+        <Route path="/add-player" element={<ProtectedRoute session={session}><AddPlayer /></ProtectedRoute>} />
+        <Route path="/view-database" element={<ProtectedRoute session={session}><ViewDatabase /></ProtectedRoute>} />
       </Routes>
     </Router>
   );
