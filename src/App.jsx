@@ -41,7 +41,7 @@ function Header() {
   const [time, setTime] = useState(new Date());
   const navigate = useNavigate();
   useEffect(() => { const t = setInterval(() => setTime(new Date()), 1000); return () => clearInterval(t); }, []);
-  
+
   const handleLogout = () => {
     localStorage.removeItem("isLoggedIn");
     navigate("/login");
@@ -101,9 +101,9 @@ function Login() {
           <h2 style={{ color: theme.primary, marginBottom: "20px" }}>Admin Portal Login</h2>
           <form onSubmit={handleLogin}>
             <label style={labelStyle}>Username</label>
-            <input style={{...inputStyle, marginBottom: "15px"}} type="text" onChange={(e) => setUser(e.target.value)} required />
+            <input style={{ ...inputStyle, marginBottom: "15px" }} type="text" onChange={(e) => setUser(e.target.value)} required />
             <label style={labelStyle}>Password</label>
-            <input style={{...inputStyle, marginBottom: "25px"}} type="password" onChange={(e) => setPass(e.target.value)} required />
+            <input style={{ ...inputStyle, marginBottom: "25px" }} type="password" onChange={(e) => setPass(e.target.value)} required />
             <button type="submit" style={{ padding: "15px", cursor: "pointer", borderRadius: "10px", border: "none", backgroundColor: theme.primary, color: "white", width: "100%", fontWeight: "bold", fontSize: "16px" }}>Access Portal</button>
           </form>
         </div>
@@ -134,6 +134,7 @@ function Dashboard() {
 }
 
 function AddPlayer() {
+  const navigate = useNavigate();
   const [db, setDb] = useState(JSON.parse(localStorage.getItem("nellore_final_db")) || []);
   const [photo, setPhoto] = useState("");
   const [form, setForm] = useState({ name: "", fatherName: "", dob: "", category: "Sub-Junior", districtNo: "", stateNo: "", aadhar: "", institution: "", location: "", address: "", mobile: "", yearPlayed: "", venue: "", position: "" });
@@ -150,7 +151,7 @@ function AddPlayer() {
     const updated = [...db, { ...form, photo, id: Date.now() }];
     localStorage.setItem("nellore_final_db", JSON.stringify(updated));
     alert("Player Profile Saved Successfully!");
-    window.location.href = "/view-database";
+    navigate("/view-database");
   };
 
   return (
@@ -162,29 +163,29 @@ function AddPlayer() {
           <form onSubmit={save}>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px" }}>
               <div>
-                <label style={labelStyle}>Full Name</label><input style={inputStyle} onChange={e => setForm({...form, name: e.target.value})} required />
-                <label style={labelStyle}>Father's Name</label><input style={inputStyle} onChange={e => setForm({...form, fatherName: e.target.value})} required />
-                <label style={labelStyle}>Date of Birth</label><input style={inputStyle} type="date" onChange={e => setForm({...form, dob: e.target.value})} required />
-                <label style={labelStyle}>Aadhar Card</label><input style={inputStyle} onChange={e => setForm({...form, aadhar: e.target.value})} required />
+                <label style={labelStyle}>Full Name</label><input style={inputStyle} onChange={e => setForm({ ...form, name: e.target.value })} required />
+                <label style={labelStyle}>Father's Name</label><input style={inputStyle} onChange={e => setForm({ ...form, fatherName: e.target.value })} required />
+                <label style={labelStyle}>Date of Birth</label><input style={inputStyle} type="date" onChange={e => setForm({ ...form, dob: e.target.value })} required />
+                <label style={labelStyle}>Aadhar Card</label><input style={inputStyle} onChange={e => setForm({ ...form, aadhar: e.target.value })} required />
               </div>
               <div>
                 <label style={labelStyle}>Photo</label><input type="file" accept="image/*" onChange={handlePhoto} style={inputStyle} />
-                <label style={labelStyle}>Mobile</label><input style={inputStyle} type="tel" onChange={e => setForm({...form, mobile: e.target.value})} required />
-                <label style={labelStyle}>District Number.</label><input style={inputStyle} onChange={e => setForm({...form, districtNo: e.target.value})} />
-                <label style={labelStyle}>State Number.</label><input style={inputStyle} onChange={e => setForm({...form, stateNo: e.target.value})} />
+                <label style={labelStyle}>Mobile</label><input style={inputStyle} type="tel" onChange={e => setForm({ ...form, mobile: e.target.value })} required />
+                <label style={labelStyle}>District Number.</label><input style={inputStyle} onChange={e => setForm({ ...form, districtNo: e.target.value })} />
+                <label style={labelStyle}>State Number.</label><input style={inputStyle} onChange={e => setForm({ ...form, stateNo: e.target.value })} />
               </div>
             </div>
-            <label style={labelStyle}>School / College / Job</label><input style={inputStyle} onChange={e => setForm({...form, institution: e.target.value})} required />
+            <label style={labelStyle}>School / College / Job</label><input style={inputStyle} onChange={e => setForm({ ...form, institution: e.target.value })} required />
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "15px" }}>
-              <div><label style={labelStyle}>Village / City</label><input style={inputStyle} onChange={e => setForm({...form, location: e.target.value})} required /></div>
-              <div><label style={labelStyle}>Full Address</label><input style={inputStyle} onChange={e => setForm({...form, address: e.target.value})} required /></div>
+              <div><label style={labelStyle}>Village / City</label><input style={inputStyle} onChange={e => setForm({ ...form, location: e.target.value })} required /></div>
+              <div><label style={labelStyle}>Full Address</label><input style={inputStyle} onChange={e => setForm({ ...form, address: e.target.value })} required /></div>
             </div>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "10px", marginTop: "20px", background: "#f8f9fa", padding: "15px", borderRadius: "10px" }}>
-              <div><label style={labelStyle}>Category</label><select style={inputStyle} onChange={e => setForm({...form, category: e.target.value})}><option value="Sub-Junior">Sub-Junior</option><option value="Junior">Junior</option><option value="Senior">Senior</option></select></div>
-              <div><label style={labelStyle}>Year</label><input style={inputStyle} type="number" onChange={e => setForm({...form, yearPlayed: e.target.value})} /></div>
-              <div><label style={labelStyle}>Position</label><input style={inputStyle} onChange={e => setForm({...form, position: e.target.value})} /></div>
+              <div><label style={labelStyle}>Category</label><select style={inputStyle} onChange={e => setForm({ ...form, category: e.target.value })}><option value="Sub-Junior">Sub-Junior</option><option value="Junior">Junior</option><option value="Senior">Senior</option></select></div>
+              <div><label style={labelStyle}>Year</label><input style={inputStyle} type="number" onChange={e => setForm({ ...form, yearPlayed: e.target.value })} /></div>
+              <div><label style={labelStyle}>Position</label><input style={inputStyle} onChange={e => setForm({ ...form, position: e.target.value })} /></div>
             </div>
-            <label style={labelStyle}>Tournament Venue</label><input style={inputStyle} onChange={e => setForm({...form, venue: e.target.value})} />
+            <label style={labelStyle}>Tournament Venue</label><input style={inputStyle} onChange={e => setForm({ ...form, venue: e.target.value })} />
             <button type="submit" style={{ marginTop: "30px", padding: "18px", backgroundColor: theme.primary, color: "white", border: "none", borderRadius: "10px", width: "100%", fontWeight: "bold", cursor: "pointer" }}>Complete Registration</button>
           </form>
           <br /><Link to="/" className="no-print" style={{ fontWeight: "bold", color: theme.primary, textDecoration: "none" }}>← Back to Dashboard</Link>
@@ -212,16 +213,16 @@ function ViewDatabase() {
   const deletePlayer = (id) => { if (window.confirm("Delete record?")) { const updated = db.filter(p => p.id !== id); setDb(updated); localStorage.setItem("nellore_final_db", JSON.stringify(updated)); } };
 
   const exportToExcel = () => {
-    const fileData = db.map(({photo, id, ...rest}) => rest);
+    const fileData = db.map(({ photo, id, ...rest }) => rest);
     const worksheet = XLSX.utils.json_to_sheet(fileData);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Players");
     XLSX.writeFile(workbook, "Nellore_Netball_Registry.xlsx");
   };
 
-  const filteredData = db.filter(p => 
-    p.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    p.aadhar.includes(searchTerm) || 
+  const filteredData = db.filter(p =>
+    p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    p.aadhar.includes(searchTerm) ||
     p.mobile.includes(searchTerm)
   );
 
@@ -232,9 +233,9 @@ function ViewDatabase() {
         <Header />
         <div style={{ width: "95%", display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "15px" }} className="no-print">
           <div style={{ position: "relative", width: "350px" }}>
-            <input 
-              style={{ ...inputStyle, paddingLeft: "35px", border: `2px solid ${theme.primary}` }} 
-              placeholder="Search Name, Aadhar, or Mobile..." 
+            <input
+              style={{ ...inputStyle, paddingLeft: "35px", border: `2px solid ${theme.primary}` }}
+              placeholder="Search Name, Aadhar, or Mobile..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -250,7 +251,7 @@ function ViewDatabase() {
           <table style={{ width: "100%", borderCollapse: "collapse", minWidth: "1550px" }}>
             <thead>
               <tr style={{ backgroundColor: theme.primary, color: "white", fontSize: "11px" }}>
-                <th style={{padding:"12px", width:"60px"}}>Photo</th>
+                <th style={{ padding: "12px", width: "60px" }}>Photo</th>
                 <th>Identity Details</th>
                 <th>Official Numbers</th>
                 <th>Career & Venue</th>
@@ -267,31 +268,31 @@ function ViewDatabase() {
                   {editId === p.id ? (
                     <>
                       <td>
-                        <input style={tableInput} value={editData.name} onChange={e=>setEditData({...editData, name:e.target.value})} />
-                        <input style={tableInput} value={editData.fatherName} onChange={e=>setEditData({...editData, fatherName:e.target.value})} />
-                        <input style={tableInput} type="date" value={editData.dob} onChange={e=>setEditData({...editData, dob:e.target.value})} />
+                        <input style={tableInput} value={editData.name} onChange={e => setEditData({ ...editData, name: e.target.value })} />
+                        <input style={tableInput} value={editData.fatherName} onChange={e => setEditData({ ...editData, fatherName: e.target.value })} />
+                        <input style={tableInput} type="date" value={editData.dob} onChange={e => setEditData({ ...editData, dob: e.target.value })} />
                       </td>
                       <td>
-                        <input style={tableInput} value={editData.aadhar} onChange={e=>setEditData({...editData, aadhar:e.target.value})} />
-                        <input style={tableInput} value={editData.districtNo} onChange={e=>setEditData({...editData, districtNo:e.target.value})} />
-                        <input style={tableInput} value={editData.stateNo} onChange={e=>setEditData({...editData, stateNo:e.target.value})} />
+                        <input style={tableInput} value={editData.aadhar} onChange={e => setEditData({ ...editData, aadhar: e.target.value })} />
+                        <input style={tableInput} value={editData.districtNo} onChange={e => setEditData({ ...editData, districtNo: e.target.value })} />
+                        <input style={tableInput} value={editData.stateNo} onChange={e => setEditData({ ...editData, stateNo: e.target.value })} />
                       </td>
                       <td>
-                        <select style={tableInput} value={editData.category} onChange={e=>setEditData({...editData, category:e.target.value})}>
+                        <select style={tableInput} value={editData.category} onChange={e => setEditData({ ...editData, category: e.target.value })}>
                           <option value="Sub-Junior">Sub-Junior</option><option value="Junior">Junior</option><option value="Senior">Senior</option>
                         </select>
-                        <input style={tableInput} value={editData.yearPlayed} onChange={e=>setEditData({...editData, yearPlayed:e.target.value})} />
-                        <input style={tableInput} value={editData.position} onChange={e=>setEditData({...editData, position:e.target.value})} />
-                        <input style={tableInput} value={editData.venue} onChange={e=>setEditData({...editData, venue:e.target.value})} />
+                        <input style={tableInput} value={editData.yearPlayed} onChange={e => setEditData({ ...editData, yearPlayed: e.target.value })} />
+                        <input style={tableInput} value={editData.position} onChange={e => setEditData({ ...editData, position: e.target.value })} />
+                        <input style={tableInput} value={editData.venue} onChange={e => setEditData({ ...editData, venue: e.target.value })} />
                       </td>
                       <td>
-                        <input style={tableInput} value={editData.mobile} onChange={e=>setEditData({...editData, mobile:e.target.value})} />
-                        <input style={tableInput} value={editData.institution} onChange={e=>setEditData({...editData, institution:e.target.value})} />
-                        <input style={tableInput} value={editData.location} onChange={e=>setEditData({...editData, location:e.target.value})} />
+                        <input style={tableInput} value={editData.mobile} onChange={e => setEditData({ ...editData, mobile: e.target.value })} />
+                        <input style={tableInput} value={editData.institution} onChange={e => setEditData({ ...editData, institution: e.target.value })} />
+                        <input style={tableInput} value={editData.location} onChange={e => setEditData({ ...editData, location: e.target.value })} />
                       </td>
-                      <td className="no-print" style={{textAlign:"center"}}>
-                        <button onClick={saveEdit} style={{ color: theme.success, fontWeight: "bold", border: "none", background: "none", cursor: "pointer", display:"block", width:"100%" }}>SAVE</button>
-                        <button onClick={cancelEdit} style={{ color: "#888", border: "none", background: "none", cursor: "pointer", display:"block", width:"100%", marginTop:"5px" }}>Cancel</button>
+                      <td className="no-print" style={{ textAlign: "center" }}>
+                        <button onClick={saveEdit} style={{ color: theme.success, fontWeight: "bold", border: "none", background: "none", cursor: "pointer", display: "block", width: "100%" }}>SAVE</button>
+                        <button onClick={cancelEdit} style={{ color: "#888", border: "none", background: "none", cursor: "pointer", display: "block", width: "100%", marginTop: "5px" }}>Cancel</button>
                       </td>
                     </>
                   ) : (
@@ -300,7 +301,7 @@ function ViewDatabase() {
                       <td>Aadhar: <strong>{p.aadhar}</strong><br />Dist No: {p.districtNo}<br />State No: {p.stateNo}</td>
                       <td>Cat: {p.category}<br />Year: {p.yearPlayed}<br />Pos: {p.position}<br />Venue: <strong>{p.venue}</strong></td>
                       <td>Mob: {p.mobile}<br />{p.institution}<br />{p.location}, {p.address}</td>
-                      <td className="no-print" style={{textAlign:"center"}}>
+                      <td className="no-print" style={{ textAlign: "center" }}>
                         <button onClick={() => startEdit(p)} style={{ color: theme.primary, fontWeight: "bold", border: "none", background: "none", cursor: "pointer", marginRight: "10px" }}>EDIT</button>
                         <button onClick={() => deletePlayer(p.id)} style={{ color: theme.danger, fontWeight: "bold", border: "none", background: "none", cursor: "pointer" }}>DELETE</button>
                       </td>
@@ -318,15 +319,15 @@ function ViewDatabase() {
   );
 }
 
-export default function App() { 
-  return ( 
-    <Router> 
-      <Routes> 
+export default function App() {
+  return (
+    <Router>
+      <Routes>
         <Route path="/login" element={<Login />} />
-        <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} /> 
-        <Route path="/add-player" element={<ProtectedRoute><AddPlayer /></ProtectedRoute>} /> 
-        <Route path="/view-database" element={<ProtectedRoute><ViewDatabase /></ProtectedRoute>} /> 
-      </Routes> 
-    </Router> 
-  ); 
+        <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+        <Route path="/add-player" element={<ProtectedRoute><AddPlayer /></ProtectedRoute>} />
+        <Route path="/view-database" element={<ProtectedRoute><ViewDatabase /></ProtectedRoute>} />
+      </Routes>
+    </Router>
+  );
 }
