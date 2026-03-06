@@ -1,10 +1,8 @@
 import { BrowserRouter as Router, Routes, Route, Link, Navigate, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import * as XLSX from "xlsx";
+import { supabase } from "./supabaseClient";
 
-// --- SETTINGS (CHANGE YOUR USERNAME/PASSWORD HERE) ---
-const ADMIN_USER = "Hemanth";
-const ADMIN_PASS = "Hemu200201";
 
 // --- THEME ---
 const theme = {
@@ -42,8 +40,8 @@ function Header() {
   const navigate = useNavigate();
   useEffect(() => { const t = setInterval(() => setTime(new Date()), 1000); return () => clearInterval(t); }, []);
 
-  const handleLogout = () => {
-    localStorage.removeItem("isLoggedIn");
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
     navigate("/login");
   };
 
@@ -56,9 +54,7 @@ function Header() {
       <div style={{ textAlign: "right" }}>
         <div style={{ color: theme.secondary, fontWeight: "600", fontSize: "18px" }}>{time.toLocaleDateString('en-GB')}</div>
         <div style={{ color: theme.primary, fontSize: "28px", fontWeight: "800", marginTop: "2px" }}>{time.toLocaleTimeString()}</div>
-        {localStorage.getItem("isLoggedIn") && (
-          <button onClick={handleLogout} style={{ color: theme.danger, background: "none", border: "none", cursor: "pointer", fontWeight: "bold", textDecoration: "underline", marginTop: "10px" }}>Logout</button>
-        )}
+        <button onClick={handleLogout} style={{ color: theme.danger, background: "none", border: "none", cursor: "pointer", fontWeight: "bold", textDecoration: "underline", marginTop: "10px" }}>Logout</button>
       </div>
     </div>
   );
@@ -74,23 +70,28 @@ function Signature() {
 }
 
 // --- PROTECTION ---
-const ProtectedRoute = ({ children }) => {
-  return localStorage.getItem("isLoggedIn") ? children : <Navigate to="/login" />;
+const ProtectedRoute = ({ children, session }) => {
+  if (session === undefined) return <div style={pageWrapper}><div style={contentContainer}><h2>Loading securely...</h2></div></div>;
+  return session ? children : <Navigate to="/login" />;
 };
 
 // --- PAGES ---
 function Login() {
-  const [user, setUser] = useState("");
+  const [email, setEmail] = useState("");
   const [pass, setPass] = useState("");
   const navigate = useNavigate();
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
-    if (user === ADMIN_USER && pass === ADMIN_PASS) {
-      localStorage.setItem("isLoggedIn", "true");
-      navigate("/");
+    const { error } = await supabase.auth.signInWithPassword({
+      email: email,
+      password: pass,
+    });
+
+    if (error) {
+      alert(error.message);
     } else {
-      alert("Invalid Admin Credentials!");
+      navigate("/");
     }
   };
 
@@ -100,8 +101,8 @@ function Login() {
         <div style={cardStyle}>
           <h2 style={{ color: theme.primary, marginBottom: "20px" }}>Admin Portal Login</h2>
           <form onSubmit={handleLogin}>
-            <label style={labelStyle}>Username</label>
-            <input style={{ ...inputStyle, marginBottom: "15px" }} type="text" onChange={(e) => setUser(e.target.value)} required />
+            <label style={labelStyle}>Email Address</label>
+            <input style={{ ...inputStyle, marginBottom: "15px" }} type="email" onChange={(e) => setEmail(e.target.value)} required />
             <label style={labelStyle}>Password</label>
             <input style={{ ...inputStyle, marginBottom: "25px" }} type="password" onChange={(e) => setPass(e.target.value)} required />
             <button type="submit" style={{ padding: "15px", cursor: "pointer", borderRadius: "10px", border: "none", backgroundColor: theme.primary, color: "white", width: "100%", fontWeight: "bold", fontSize: "16px" }}>Access Portal</button>
@@ -135,7 +136,6 @@ function Dashboard() {
 
 function AddPlayer() {
   const navigate = useNavigate();
-  const [db, setDb] = useState(JSON.parse(localStorage.getItem("nellore_final_db")) || []);
   const [photo, setPhoto] = useState("");
   const [form, setForm] = useState({ name: "", fatherName: "", dob: "", category: "Sub-Junior", districtNo: "", stateNo: "", aadhar: "", institution: "", location: "", address: "", mobile: "", yearPlayed: "", venue: "", position: "" });
 
@@ -146,10 +146,37 @@ function AddPlayer() {
     if (file) reader.readAsDataURL(file);
   };
 
-  const save = (e) => {
+  const save = async (e) => {
     e.preventDefault();
-    const updated = [...db, { ...form, photo, id: Date.now() }];
-    localStorage.setItem("nellore_final_db", JSON.stringify(updated));
+
+    const { data, error } = await supabase
+      .from('players')
+      .insert([
+        {
+          name: form.name,
+          father_name: form.fatherName,
+          dob: form.dob,
+          category: form.category,
+          district_no: form.districtNo,
+          state_no: form.stateNo,
+          aadhar: form.aadhar,
+          institution: form.institution,
+          location: form.location,
+          address: form.address,
+          mobile: form.mobile,
+          year_played: form.yearPlayed,
+          venue: form.venue,
+          position: form.position,
+          photo: photo
+        }
+      ]);
+
+    if (error) {
+      console.error("Error saving player:", error);
+      alert("Failed to save player. See console for details.");
+      return;
+    }
+
     alert("Player Profile Saved Successfully!");
     navigate("/view-database");
   };
@@ -197,20 +224,86 @@ function AddPlayer() {
 }
 
 function ViewDatabase() {
-  const [db, setDb] = useState(JSON.parse(localStorage.getItem("nellore_final_db")) || []);
+  const [db, setDb] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [editId, setEditId] = useState(null);
   const [editData, setEditData] = useState({});
 
-  const startEdit = (p) => { setEditId(p.id); setEditData({ ...p }); };
-  const cancelEdit = () => setEditId(null);
-  const saveEdit = () => {
-    const updated = db.map(p => p.id === editId ? editData : p);
-    setDb(updated);
-    localStorage.setItem("nellore_final_db", JSON.stringify(updated));
-    setEditId(null);
+  useEffect(() => {
+    fetchPlayers();
+  }, []);
+
+  const fetchPlayers = async () => {
+    const { data, error } = await supabase
+      .from('players')
+      .select('*')
+      .order('id', { ascending: false });
+
+    if (error) {
+      console.error("Error fetching players:", error);
+    } else {
+      setDb(data);
+    }
   };
-  const deletePlayer = (id) => { if (window.confirm("Delete record?")) { const updated = db.filter(p => p.id !== id); setDb(updated); localStorage.setItem("nellore_final_db", JSON.stringify(updated)); } };
+
+  const startEdit = (p) => {
+    setEditId(p.id);
+    // Map snake_case DB fields back to camelCase for the edit form state
+    setEditData({
+      ...p,
+      fatherName: p.father_name,
+      districtNo: p.district_no,
+      stateNo: p.state_no,
+      yearPlayed: p.year_played
+    });
+  };
+  const cancelEdit = () => setEditId(null);
+
+  const saveEdit = async () => {
+    const { error } = await supabase
+      .from('players')
+      .update({
+        name: editData.name,
+        father_name: editData.fatherName,
+        dob: editData.dob,
+        category: editData.category,
+        district_no: editData.districtNo,
+        state_no: editData.stateNo,
+        aadhar: editData.aadhar,
+        institution: editData.institution,
+        location: editData.location,
+        address: editData.address,
+        mobile: editData.mobile,
+        year_played: editData.yearPlayed,
+        venue: editData.venue,
+        position: editData.position
+      })
+      .eq('id', editId);
+
+    if (error) {
+      console.error("Error updating player:", error);
+      alert("Failed to update player.");
+    } else {
+      setEditId(null);
+      fetchPlayers(); // Refresh list to get updated data
+    }
+  };
+
+  const deletePlayer = async (id) => {
+    if (window.confirm("Delete record?")) {
+      const { error } = await supabase
+        .from('players')
+        .delete()
+        .eq('id', id);
+
+      if (error) {
+        console.error("Error deleting player:", error);
+        alert("Failed to delete player.");
+      } else {
+        fetchPlayers(); // Refresh list to get updated data
+      }
+    }
+  };
 
   const exportToExcel = () => {
     const fileData = db.map(({ photo, id, ...rest }) => rest);
@@ -221,9 +314,9 @@ function ViewDatabase() {
   };
 
   const filteredData = db.filter(p =>
-    p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    p.aadhar.includes(searchTerm) ||
-    p.mobile.includes(searchTerm)
+    (p.name?.toLowerCase().includes(searchTerm.toLowerCase())) ||
+    (p.aadhar?.includes(searchTerm)) ||
+    (p.mobile?.includes(searchTerm))
   );
 
   return (
@@ -297,9 +390,9 @@ function ViewDatabase() {
                     </>
                   ) : (
                     <>
-                      <td style={{ padding: "10px" }}><strong>{p.name.toUpperCase()}</strong><br />S/O: {p.fatherName}<br />DOB: {p.dob}</td>
-                      <td>Aadhar: <strong>{p.aadhar}</strong><br />Dist No: {p.districtNo}<br />State No: {p.stateNo}</td>
-                      <td>Cat: {p.category}<br />Year: {p.yearPlayed}<br />Pos: {p.position}<br />Venue: <strong>{p.venue}</strong></td>
+                      <td style={{ padding: "10px" }}><strong>{p.name?.toUpperCase()}</strong><br />S/O: {p.father_name}<br />DOB: {p.dob}</td>
+                      <td>Aadhar: <strong>{p.aadhar}</strong><br />Dist No: {p.district_no}<br />State No: {p.state_no}</td>
+                      <td>Cat: {p.category}<br />Year: {p.year_played}<br />Pos: {p.position}<br />Venue: <strong>{p.venue}</strong></td>
                       <td>Mob: {p.mobile}<br />{p.institution}<br />{p.location}, {p.address}</td>
                       <td className="no-print" style={{ textAlign: "center" }}>
                         <button onClick={() => startEdit(p)} style={{ color: theme.primary, fontWeight: "bold", border: "none", background: "none", cursor: "pointer", marginRight: "10px" }}>EDIT</button>
@@ -320,13 +413,29 @@ function ViewDatabase() {
 }
 
 export default function App() {
+  const [session, setSession] = useState(undefined);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+    });
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
   return (
     <Router>
       <Routes>
-        <Route path="/login" element={<Login />} />
-        <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-        <Route path="/add-player" element={<ProtectedRoute><AddPlayer /></ProtectedRoute>} />
-        <Route path="/view-database" element={<ProtectedRoute><ViewDatabase /></ProtectedRoute>} />
+        <Route path="/login" element={session ? <Navigate to="/" /> : <Login />} />
+        <Route path="/" element={<ProtectedRoute session={session}><Dashboard /></ProtectedRoute>} />
+        <Route path="/add-player" element={<ProtectedRoute session={session}><AddPlayer /></ProtectedRoute>} />
+        <Route path="/view-database" element={<ProtectedRoute session={session}><ViewDatabase /></ProtectedRoute>} />
       </Routes>
     </Router>
   );
